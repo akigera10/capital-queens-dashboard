@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Capital Queens — Investment Alignment Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple-50: #EEEDFE; --purple-200: #AFA9EC; --purple-400: #7F77DD; --purple-600: #534AB7; --purple-800: #3C3489;
+    --teal-50: #E1F5EE; --teal-400: #1D9E75; --teal-600: #0F6E56; --teal-800: #085041;
+    --amber-50: #FAEEDA; --amber-400: #EF9F27; --amber-600: #854F0B; --amber-800: #633806;
+    --coral-50: #FAECE7; --coral-400: #D85A30; --coral-800: #712B13;
+    --gray-50: #F1EFE8; --gray-100: #D3D1C7; --gray-400: #888780; --gray-800: #444441;
+    --red-50: #FCEBEB; --red-400: #E24B4A;
+    --text-primary: #1a1a1a; --text-secondary: #5a5a5a; --text-tertiary: #8a8a8a;
+    --bg-primary: #ffffff; --bg-secondary: #f6f5f2; --bg-tertiary: #f0efe9;
+    --border: rgba(0,0,0,0.1); --radius-md: 8px; --radius-lg: 12px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
+  .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .hero { background: var(--purple-600); color: white; border-radius: var(--radius-lg); padding: 2rem 2.5rem; margin-bottom: 2rem; }
+  .hero-title { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
+  .hero-sub { font-size: 14px; opacity: 0.8; margin-top: 6px; }
+  .hero-pills { display: flex; gap: 10px; margin-top: 1.2rem; flex-wrap: wrap; }
+  .hero-pill { background: rgba(255,255,255,0.18); border-radius: 999px; padding: 4px 14px; font-size: 13px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 2rem; }
+  .metric { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .metric-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .metric-value { font-size: 26px; font-weight: 600; color: var(--purple-600); }
+  .metric-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .nav-btn { font-size: 13px; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .nav-btn:hover { background: var(--bg-secondary); }
+  .nav-btn.active { background: var(--purple-600); color: white; border-color: var(--purple-600); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .section-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
+  .card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .bar-label { font-size: 12px; color: var(--text-secondary); width: 160px; flex-shrink: 0; line-height: 1.4; }
+  .bar-track { flex: 1; background: var(--bg-secondary); border-radius: 4px; height: 26px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: white; }
+  .bar-count { font-size: 12px; color: var(--text-tertiary); width: 20px; text-align: right; flex-shrink: 0; }
+  .insight { background: var(--purple-50); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .insight-label { font-size: 11px; font-weight: 700; color: var(--purple-600); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .insight-text { font-size: 13px; color: var(--purple-800); line-height: 1.65; }
+  .signal { background: var(--amber-50); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .signal-label { font-size: 11px; font-weight: 700; color: var(--amber-600); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .signal-text { font-size: 13px; color: var(--amber-800); line-height: 1.65; }
+  .vote-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-bottom: 1.25rem; }
+  .vote-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; text-align: center; }
+  .vote-num { font-size: 30px; font-weight: 700; color: var(--teal-400); }
+  .vote-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .quote-list { list-style: none; }
+  .quote-item { border-left: 3px solid var(--purple-200); padding: 6px 0 6px 14px; margin-bottom: 10px; font-size: 13px; color: var(--text-secondary); font-style: italic; line-height: 1.55; }
+  .full-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+  .step-num { background: var(--purple-600); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .step-bold { font-weight: 600; color: var(--text-primary); }
+  .footer { margin-top: 3rem; text-align: center; font-size: 12px; color: var(--text-tertiary); }
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .vote-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .bar-label { width: 120px; }
+    .hero { padding: 1.5rem; }
+    .hero-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-title">Capital Queens</div>
+    <div class="hero-sub">Investment Alignment Analysis &nbsp;·&nbsp; March 2026</div>
+    <div class="hero-pills">
+      <span class="hero-pill">9 of 9 members</span>
+      <span class="hero-pill">KES 90,000 monthly pool</span>
+      <span class="hero-pill">100% response rate</span>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Long-term goal</div>
+      <div class="metric-value">8/9</div>
+      <div class="metric-sub">5+ year wealth building</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Risk comfortable</div>
+      <div class="metric-value">8/9</div>
+      <div class="metric-sub">hold through a downturn</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Structure support</div>
+      <div class="metric-value">9/9</div>
+      <div class="metric-sub">2-bucket model</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Formalization</div>
+      <div class="metric-value">9/9</div>
+      <div class="metric-sub">unanimous support</div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('overview', this)">Overview</button>
+    <button class="nav-btn" onclick="showSection('purpose', this)">Capital purpose</button>
+    <button class="nav-btn" onclick="showSection('risk', this)">Risk tolerance</button>
+    <button class="nav-btn" onclick="showSection('liquidity', this)">Liquidity</button>
+    <button class="nav-btn" onclick="showSection('structure', this)">Portfolio structure</button>
+    <button class="nav-btn" onclick="showSection('governance', this)">Governance</button>
+    <button class="nav-btn" onclick="showSection('ambition', this)">Future ambition</button>
+    <button class="nav-btn" onclick="showSection('nextsteps', this)">Next steps</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="sec-overview" class="section active">
+    <div class="section-title">Where we stand as a group</div>
+    <div class="section-desc">Alignment across all major themes. Green = strong consensus. Amber = decision or conversation needed.</div>
+    <div class="full-card">
+      <div class="card-title">Alignment scorecard</div>
+      <div class="bar-row"><div class="bar-label">2-bucket structure</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1D9E75;">9 of 9 — unanimous</div></div><div class="bar-count">100%</div></div>
+      <div class="bar-row"><div class="bar-label">Annual 10% step-up</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1D9E75;">9 of 9 — unanimous</div></div><div class="bar-count">100%</div></div>
+      <div class="bar-row"><div class="bar-label">Entity formalization</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1D9E75;">9 of 9 — unanimous</div></div><div class="bar-count">100%</div></div>
+      <div class="bar-row"><div class="bar-label">Long-term goal</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#1D9E75;">8 of 9</div></div><div class="bar-count">89%</div></div>
+      <div class="bar-row"><div class="bar-label">Comfortable with risk</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#1D9E75;">8 of 9</div></div><div class="bar-count">89%</div></div>
+      <div class="bar-row"><div class="bar-label">KES 100k top-up approach</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#1D9E75;">8 of 9</div></div><div class="bar-count">89%</div></div>
+      <div class="bar-row"><div class="bar-label">Low liquidity pressure</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:#1D9E75;">6 of 9</div></div><div class="bar-count">67%</div></div>
+      <div class="bar-row"><div class="bar-label">First tranche KES 250k</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#EF9F27;">5 of 9 — needs alignment</div></div><div class="bar-count">56%</div></div>
+      <div class="bar-row"><div class="bar-label">Decision-making model</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#EF9F27;">4/4 split — unresolved</div></div><div class="bar-count">—</div></div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">Two things need resolution before deployment</div>
+      <div class="signal-text">1. Hold a member education session — 4 members are uncertain or opposed on the KES 250k first tranche.<br><br>2. Resolve the 4/4 governance split in the chama constitution before the first vote.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">The big picture</div>
+      <div class="insight-text">Capital Queens has exceptional alignment on the fundamentals. The areas of divergence are addressable through education and a well-drafted constitution — not structural disagreements.</div>
+    </div>
+  </div>
+
+  <!-- CAPITAL PURPOSE -->
+  <div id="sec-purpose" class="section">
+    <div class="section-title">Capital purpose & time horizon</div>
+    <div class="section-desc">What members are here for and how long they are comfortable waiting.</div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Main goal</div>
+        <div class="bar-row"><div class="bar-label">Long-term wealth (5+ yrs)</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#534AB7;">8</div></div><div class="bar-count">8</div></div>
+        <div class="bar-row"><div class="bar-label">Medium-term (2–5 yrs)</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#AFA9EC;color:#3C3489;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Comfort horizon (leaving money invested)</div>
+        <div class="bar-row"><div class="bar-label">5+ years</div><div class="bar-track"><div class="bar-fill" style="width:78%;background:#534AB7;">7</div></div><div class="bar-count">7</div></div>
+        <div class="bar-row"><div class="bar-label">3–5 years</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#AFA9EC;color:#3C3489;">2</div></div><div class="bar-count">2</div></div>
+        <div class="bar-row"><div class="bar-label">1–3 years</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#D85A30;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+    </div>
+    <div class="full-card">
+      <div class="card-title">What is this money mainly for?</div>
+      <div class="bar-row"><div class="bar-label">Opportunities (property, business)</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#534AB7;">5</div></div><div class="bar-count">5</div></div>
+      <div class="bar-row"><div class="bar-label">Long-term wealth</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:#7F77DD;">3</div></div><div class="bar-count">3</div></div>
+      <div class="bar-row"><div class="bar-label">A mix of the above</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#AFA9EC;color:#3C3489;">1</div></div><div class="bar-count">1</div></div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Investment insight</div>
+      <div class="insight-text">Capital is overwhelmingly patient and long-term in character. The 1 member with a 1–3 year comfort horizon is the only outlier — the MMF buffer exists precisely to absorb this. The tension between that member selecting "long-term wealth" while feeling comfortable with only 1–3 years is worth exploring in a one-to-one conversation.</div>
+    </div>
+  </div>
+
+  <!-- RISK -->
+  <div id="sec-risk" class="section">
+    <div class="section-title">Risk tolerance</div>
+    <div class="section-desc">How members feel about market volatility, poor performance, and their own appetite for risk.</div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Reaction to a 10–20% drop in value</div>
+        <div class="bar-row"><div class="bar-label">Comfortable — markets fluctuate</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#1D9E75;">5</div></div><div class="bar-count">5</div></div>
+        <div class="bar-row"><div class="bar-label">Concerned but willing to wait</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:#EF9F27;">3</div></div><div class="bar-count">3</div></div>
+        <div class="bar-row"><div class="bar-label">Withdraw & protect capital</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#E24B4A;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Risk appetite</div>
+        <div class="bar-row"><div class="bar-label">Higher risk, higher returns</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#1D9E75;">5</div></div><div class="bar-count">5</div></div>
+        <div class="bar-row"><div class="bar-label">Moderate risk, better growth</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#5DCAA5;color:#04342C;">4</div></div><div class="bar-count">4</div></div>
+      </div>
+    </div>
+    <div class="full-card">
+      <div class="card-title">If an investment performs poorly for a full year, preferred action</div>
+      <div class="bar-row"><div class="bar-label">Wait and reassess</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:#1D9E75;">6</div></div><div class="bar-count">6</div></div>
+      <div class="bar-row"><div class="bar-label">Continue as planned</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#5DCAA5;color:#04342C;">2</div></div><div class="bar-count">2</div></div>
+      <div class="bar-row"><div class="bar-label">Withdraw & protect capital</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#E24B4A;">1</div></div><div class="bar-count">1</div></div>
+    </div>
+    <div class="full-card">
+      <div class="card-title">Prior investment experience</div>
+      <div class="bar-row"><div class="bar-label">Yes (MMF, stocks, bonds, etc.)</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#1D9E75;">8</div></div><div class="bar-count">8</div></div>
+      <div class="bar-row"><div class="bar-label">No prior experience</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#E24B4A;">1</div></div><div class="bar-count">1</div></div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">Notable signal</div>
+      <div class="signal-text">The 1 member who would withdraw under poor performance is also the only member with no prior investment experience. This is not a risk to the portfolio — it is an education gap. Investment onboarding for this member before the first tranche is strongly recommended.</div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Investment insight</div>
+      <div class="insight-text">The group can absorb moderate-to-high risk instruments. The growth-oriented tilt (5 vs 4) supports starting with diversified equity funds or REITs before moving to higher-risk assets. 8 of 9 members have prior investment experience — a strong foundation for informed decision-making.</div>
+    </div>
+  </div>
+
+  <!-- LIQUIDITY -->
+  <div id="sec-liquidity" class="section">
+    <div class="section-title">Liquidity expectations</div>
+    <div class="section-desc">How urgently members might need access to chama funds, and how stable contributions are expected to be.</div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Short-notice withdrawal access — how important?</div>
+        <div class="bar-row"><div class="bar-label">Not important</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:#1D9E75;">6</div></div><div class="bar-count">6</div></div>
+        <div class="bar-row"><div class="bar-label">Somewhat important</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:#EF9F27;">3</div></div><div class="bar-count">3</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Life changes expected in next 1–2 years?</div>
+        <div class="bar-row"><div class="bar-label">No major changes</div><div class="bar-track"><div class="bar-fill" style="width:78%;background:#1D9E75;">7</div></div><div class="bar-count">7</div></div>
+        <div class="bar-row"><div class="bar-label">Yes (move, children, etc.)</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#EF9F27;">2</div></div><div class="bar-count">2</div></div>
+      </div>
+    </div>
+    <div class="full-card">
+      <div class="card-title">If finances became tight, preferred option</div>
+      <div class="bar-row"><div class="bar-label">Stay at current contribution level</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#534AB7;">4</div></div><div class="bar-count">4</div></div>
+      <div class="bar-row"><div class="bar-label">Temporarily pause contributions</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#7F77DD;">2</div></div><div class="bar-count">2</div></div>
+      <div class="bar-row"><div class="bar-label">Reduce only for some years</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#AFA9EC;color:#3C3489;">1</div></div><div class="bar-count">1</div></div>
+      <div class="bar-row"><div class="bar-label">Not sure</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#888780;">2</div></div><div class="bar-count">2</div></div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Investment insight</div>
+      <div class="insight-text">Liquidity pressure remains low — the majority do not expect to need chama money urgently. The KES 540,000 MMF buffer is well-calibrated. The uptick to 3 members rating liquidity as "somewhat important" does not change strategy, but a hardship/pause policy should be documented before first deployment.</div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO STRUCTURE -->
+  <div id="sec-structure" class="section">
+    <div class="section-title">Portfolio structure preferences</div>
+    <div class="section-desc">Member views on the 2-bucket model, tranche size, step-ups, and exit rules.</div>
+    <div class="vote-grid">
+      <div class="vote-card"><div class="vote-num">9/9</div><div class="vote-label">Support 2-bucket structure</div></div>
+      <div class="vote-card"><div class="vote-num">9/9</div><div class="vote-label">10% annual step-up</div></div>
+      <div class="vote-card"><div class="vote-num">9/9</div><div class="vote-label">Long-term bucket = long-term</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">KES 540k MMF buffer — comfort level</div>
+        <div class="bar-row"><div class="bar-label">Comfortable</div><div class="bar-track"><div class="bar-fill" style="width:78%;background:#1D9E75;">7</div></div><div class="bar-count">7</div></div>
+        <div class="bar-row"><div class="bar-label">Need more explanation</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#EF9F27;">2</div></div><div class="bar-count">2</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">First tranche KES 250k — do you support it?</div>
+        <div class="bar-row"><div class="bar-label">Yes</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#1D9E75;">5</div></div><div class="bar-count">5</div></div>
+        <div class="bar-row"><div class="bar-label">Maybe</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#EF9F27;">2</div></div><div class="bar-count">2</div></div>
+        <div class="bar-row"><div class="bar-label">Not sure</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#EF9F27;">1</div></div><div class="bar-count">1</div></div>
+        <div class="bar-row"><div class="bar-label">No</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#E24B4A;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">KES 100k top-up trigger approach</div>
+        <div class="bar-row"><div class="bar-label">Comfortable</div><div class="bar-track"><div class="bar-fill" style="width:89%;background:#1D9E75;">8</div></div><div class="bar-count">8</div></div>
+        <div class="bar-row"><div class="bar-label">Need more explanation</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#EF9F27;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Early exit penalty from Long-Term Bucket — fair?</div>
+        <div class="bar-row"><div class="bar-label">Yes, fair</div><div class="bar-track"><div class="bar-fill" style="width:67%;background:#1D9E75;">6</div></div><div class="bar-count">6</div></div>
+        <div class="bar-row"><div class="bar-label">Not sure</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:#888780;">3</div></div><div class="bar-count">3</div></div>
+      </div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">Notable signal — first tranche</div>
+      <div class="signal-text">Only 5 of 9 members firmly support the KES 250k first tranche. The concerns come from different places: 1 member thinks it is too conservative (wants more deployed), 1 member opposed (likely linked to shorter horizon and no prior experience), 2 members uncertain (need more context). A dedicated pre-deployment briefing is needed before the vote.</div>
+    </div>
+  </div>
+
+  <!-- GOVERNANCE -->
+  <div id="sec-governance" class="section">
+    <div class="section-title">Governance & decision making</div>
+    <div class="section-desc">How the group wants to make decisions, delegate to officers, and manage membership.</div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Decision-making preference</div>
+        <div class="bar-row"><div class="bar-label">Majority vote</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#534AB7;">4</div></div><div class="bar-count">4</div></div>
+        <div class="bar-row"><div class="bar-label">Consensus (everyone agrees)</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#7F77DD;">4</div></div><div class="bar-count">4</div></div>
+        <div class="bar-row"><div class="bar-label">Unclear / no response</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#888780;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Officer-led investment management — comfort</div>
+        <div class="bar-row"><div class="bar-label">Very comfortable</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#1D9E75;">4</div></div><div class="bar-count">4</div></div>
+        <div class="bar-row"><div class="bar-label">Somewhat comfortable</div><div class="bar-track"><div class="bar-fill" style="width:44%;background:#5DCAA5;color:#04342C;">4</div></div><div class="bar-count">4</div></div>
+        <div class="bar-row"><div class="bar-label">Unclear</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#888780;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">New member openness</div>
+        <div class="bar-row"><div class="bar-label">Prefer to remain closed</div><div class="bar-track"><div class="bar-fill" style="width:56%;background:#534AB7;">5</div></div><div class="bar-count">5</div></div>
+        <div class="bar-row"><div class="bar-label">Open if rules are clear</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:#AFA9EC;color:#3C3489;">3</div></div><div class="bar-count">3</div></div>
+        <div class="bar-row"><div class="bar-label">Open (no condition)</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#AFA9EC;color:#3C3489;">1</div></div><div class="bar-count">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Ownership calculation</div>
+        <div class="bar-row"><div class="bar-label">Contribution-weighted</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1D9E75;">9 of 9 — unanimous</div></div><div class="bar-count">9</div></div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Investment insight</div>
+      <div class="insight-text">The 4/4 decision-making split must be resolved in the chama constitution — no natural majority exists. Recommended model: consensus required for decisions above KES 200,000; majority vote for operational matters. On membership: the closed preference is now a majority — formalize a closed clause with a future review trigger built in.</div>
+    </div>
+  </div>
+
+  <!-- AMBITION -->
+  <div id="sec-ambition" class="section">
+    <div class="section-title">Future ambition</div>
+    <div class="section-desc">What members are most excited about, and what concerns them — in their own words.</div>
+    <div class="full-card" style="margin-bottom:1.25rem;">
+      <div class="card-title" style="margin-bottom:12px;">What excites you most about growing this chama?</div>
+      <ul class="quote-list">
+        <li class="quote-item">Financial freedom for us all</li>
+        <li class="quote-item">Pooling of resources — both financial and expertise — to make more money and build wealth</li>
+        <li class="quote-item">Access to opportunities that would otherwise have taken much longer to achieve alone</li>
+        <li class="quote-item">Long-lasting shared goals; being able to contribute to each other's big life things</li>
+        <li class="quote-item">Love everything about this thinking and strategy</li>
+        <li class="quote-item">The greater access we'll have to opportunities due to pooling — and the community aspect</li>
+        <li class="quote-item">Investment potential growing!</li>
+        <li class="quote-item">Investing with like-minded peers</li>
+        <li class="quote-item">Making more money</li>
+      </ul>
+    </div>
+    <div class="full-card">
+      <div class="card-title" style="margin-bottom:12px;">Biggest concerns?</div>
+      <ul class="quote-list">
+        <li class="quote-item">Ensuring we select the right investment for our needs</li>
+        <li class="quote-item">So long as everyone is committed to this, I'm good — (quiet signal about commitment consistency)</li>
+        <li class="quote-item">Worried about keeping over 50% in MMF with only a small amount actively invested</li>
+        <li class="quote-item">No concern / None (5 members)</li>
+      </ul>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Investment insight</div>
+      <div class="insight-text">Strong social cohesion and collective ambition are a genuine competitive advantage. The quiet concern about commitment consistency is worth monitoring — not a current problem, but a reason to build transparent reporting and regular check-ins into governance from the start. Formalizing the chama early protects this cohesion as assets grow and decisions become more complex.</div>
+    </div>
+  </div>
+
+  <!-- NEXT STEPS -->
+  <div id="sec-nextsteps" class="section">
+    <div class="section-title">Next steps</div>
+    <div class="section-desc">Recommended sequence before the first tranche is deployed.</div>
+    <div class="full-card">
+      <div class="card-title" style="margin-bottom:16px;">Action plan — Q2/Q3 2026</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-text"><span class="step-bold">Confirm buffer milestone.</span> Continue accumulating in Sanlam MMF. Target KES 540,000 before any long-term deployment. Track progress monthly.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text"><span class="step-bold">Register the entity.</span> Unanimous support exists — proceed in parallel with buffer accumulation. This unlocks better long-term investment options.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text"><span class="step-bold">Investment education session.</span> Run a member briefing covering investment basics — especially for the 1 member with no prior experience. Cover MMFs, equity funds, REITs, and what a drawdown looks like in practice.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text"><span class="step-bold">Draft and ratify the chama constitution.</span> Resolve the 4/4 decision-making split (recommended: tiered model). Document the hardship/pause policy. Formalize the closed membership clause.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-text"><span class="step-bold">Pre-deployment briefing on the first tranche.</span> Address the "No" and "Maybe" responses directly. Revisit whether KES 250k is the right tranche size. Hold the formal vote once all members are aligned.</div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-text"><span class="step-bold">First investment vote — target Q3 2026.</span> With buffer confirmed, entity registered, and constitution ratified, deploy the first tranche. Establish the Investment Committee with clear mandate and reporting cadence.</div></div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-label">Most important signal</div>
+      <div class="insight-text">The member introducing the group's first "No" and the only withdrawal-under-pressure preference is the same member with no prior investment experience. This is an education gap, not a structural problem. All portfolio structure decisions remain supported by a strong majority. Run education in parallel with buffer accumulation — do not delay deployment for this reason alone.</div>
+    </div>
+  </div>
+
+  <div class="footer">Capital Queens &nbsp;·&nbsp; Investment Alignment Analysis &nbsp;·&nbsp; March 2026 &nbsp;·&nbsp; 9 of 9 members</div>
+
+</div>
+
+<script>
+  function showSection(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
